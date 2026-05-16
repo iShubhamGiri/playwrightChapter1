@@ -1,0 +1,2803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playwright Chapter 1 — Interactive Learning Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   DESIGN TOKENS & VARIABLES
+═══════════════════════════════════════════════════════════ */
+:root {
+  --bg:        #050810;
+  --bg2:       #080c18;
+  --bg3:       #0c1220;
+  --card:      #0d1424;
+  --card2:     #111827;
+  --glass:     rgba(13,20,36,0.7);
+  --glass2:    rgba(17,24,39,0.8);
+
+  --blue:      #38bdf8;
+  --blue2:     #7dd3fc;
+  --cyan:      #22d3ee;
+  --teal:      #2dd4bf;
+  --green:     #4ade80;
+  --lime:      #a3e635;
+  --amber:     #fbbf24;
+  --orange:    #fb923c;
+  --purple:    #a78bfa;
+  --violet:    #c084fc;
+  --pink:      #f472b6;
+  --red:       #f87171;
+
+  --neon-blue:   #00d4ff;
+  --neon-green:  #39ff14;
+  --neon-purple: #bf5af2;
+  --neon-cyan:   #00ffff;
+
+  --border:    rgba(56,189,248,0.1);
+  --border2:   rgba(56,189,248,0.25);
+  --border3:   rgba(56,189,248,0.45);
+
+  --text:      #f0f6ff;
+  --text2:     #cbd5e1;
+  --muted:     #64748b;
+  --muted2:    #475569;
+
+  --mono:      'Fira Code', monospace;
+  --sans:      'Space Grotesk', sans-serif;
+  --display:   'Outfit', sans-serif;
+
+  --glow-blue:   0 0 20px rgba(56,189,248,0.4);
+  --glow-cyan:   0 0 20px rgba(34,211,238,0.4);
+  --glow-green:  0 0 20px rgba(74,222,128,0.4);
+  --glow-purple: 0 0 20px rgba(167,139,250,0.4);
+
+  --radius:    14px;
+  --radius-sm: 8px;
+  --sidebar-w: 260px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BACKGROUND FX
+═══════════════════════════════════════════════════════════ */
+.bg-fx {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  overflow: hidden;
+}
+.bg-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(56,189,248,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.18;
+  animation: orbFloat 15s ease-in-out infinite;
+}
+.orb1 { width:600px;height:600px;background:radial-gradient(circle,#38bdf8,transparent); top:-200px;right:-200px;animation-delay:0s; }
+.orb2 { width:400px;height:400px;background:radial-gradient(circle,#a78bfa,transparent); bottom:-100px;left:-100px;animation-delay:-7s; }
+.orb3 { width:300px;height:300px;background:radial-gradient(circle,#22d3ee,transparent); top:40%;left:40%;animation-delay:-4s; }
+@keyframes orbFloat {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(30px,-30px) scale(1.05); }
+  66% { transform: translate(-20px,20px) scale(0.97); }
+}
+
+/* Particles */
+.particle {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: var(--blue);
+  border-radius: 50%;
+  opacity: 0;
+  animation: particleFly 8s linear infinite;
+}
+@keyframes particleFly {
+  0% { transform: translateY(100vh) translateX(0); opacity:0; }
+  10% { opacity:0.7; }
+  90% { opacity:0.4; }
+  100% { transform: translateY(-10vh) translateX(60px); opacity:0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════════════ */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+  transition: transform 0.3s ease;
+}
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo-mark {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  box-shadow: var(--glow-blue);
+  flex-shrink: 0;
+}
+.logo-text {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.logo-sub { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+.sidebar-progress {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.progress-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  display: flex; justify-content: space-between;
+}
+.progress-bar {
+  height: 3px;
+  background: var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  border-radius: 10px;
+  transition: width 0.4s ease;
+  box-shadow: var(--glow-cyan);
+}
+.sidebar-nav {
+  padding: 12px 12px;
+  flex: 1;
+}
+.nav-group-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  padding: 8px 8px 4px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  margin-bottom: 2px;
+}
+.nav-item:hover {
+  background: rgba(56,189,248,0.07);
+  border-color: var(--border);
+  color: var(--blue2);
+}
+.nav-item.active {
+  background: rgba(56,189,248,0.12);
+  border-color: var(--border2);
+  color: var(--blue);
+  box-shadow: inset 0 0 20px rgba(56,189,248,0.05);
+}
+.nav-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  min-width: 20px;
+}
+.nav-icon { font-size: 14px; min-width: 18px; }
+.nav-done {
+  margin-left: auto;
+  width: 16px; height: 16px;
+  background: var(--green);
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: #000;
+  font-weight: 700;
+}
+.nav-item.done .nav-done { display: flex; }
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+}
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 16px; left: 16px;
+  z-index: 200;
+  width: 40px; height: 40px;
+  background: var(--glass2);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN LAYOUT
+═══════════════════════════════════════════════════════════ */
+.main {
+  margin-left: var(--sidebar-w);
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+.content {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 60px 32px 120px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════════════ */
+.hero {
+  text-align: center;
+  padding: 80px 0 60px;
+  position: relative;
+}
+.chapter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  border: 1px solid rgba(34,211,238,0.3);
+  background: rgba(34,211,238,0.06);
+  padding: 7px 18px;
+  border-radius: 40px;
+  margin-bottom: 28px;
+  animation: badgePulse 3s ease-in-out infinite;
+}
+@keyframes badgePulse {
+  0%,100% { box-shadow: 0 0 0 rgba(34,211,238,0); }
+  50% { box-shadow: 0 0 20px rgba(34,211,238,0.2); }
+}
+.badge-dot {
+  width: 6px; height: 6px;
+  background: var(--cyan);
+  border-radius: 50%;
+  animation: dotBlink 1.5s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--cyan);
+}
+@keyframes dotBlink {
+  0%,100% { opacity:1; } 50% { opacity:0.3; }
+}
+.hero h1 {
+  font-family: var(--display);
+  font-size: clamp(38px, 6vw, 72px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  background: linear-gradient(135deg, #ffffff 0%, var(--blue2) 40%, var(--cyan) 70%, var(--teal) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 20px;
+}
+.hero-sub {
+  font-size: 17px;
+  color: var(--muted);
+  max-width: 580px;
+  margin: 0 auto 36px;
+  font-weight: 300;
+  line-height: 1.7;
+}
+.hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+.pill {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid;
+  transition: all 0.2s;
+}
+.pill:hover { transform: translateY(-2px); }
+.pill-blue   { color:var(--blue);   border-color:rgba(56,189,248,0.3);   background:rgba(56,189,248,0.07); }
+.pill-green  { color:var(--green);  border-color:rgba(74,222,128,0.3);   background:rgba(74,222,128,0.07); }
+.pill-amber  { color:var(--amber);  border-color:rgba(251,191,36,0.3);   background:rgba(251,191,36,0.07); }
+.pill-purple { color:var(--purple); border-color:rgba(167,139,250,0.3);  background:rgba(167,139,250,0.07); }
+.pill-cyan   { color:var(--cyan);   border-color:rgba(34,211,238,0.3);   background:rgba(34,211,238,0.07); }
+.hero-cta {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s;
+  text-decoration: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  color: #000;
+  box-shadow: 0 4px 20px rgba(56,189,248,0.3);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(56,189,248,0.45); }
+.btn-ghost {
+  background: rgba(56,189,248,0.06);
+  color: var(--blue2);
+  border: 1px solid var(--border2);
+}
+.btn-ghost:hover { background: rgba(56,189,248,0.12); transform: translateY(-2px); }
+
+/* ═══════════════════════════════════════════════════════════
+   TABLE OF CONTENTS
+═══════════════════════════════════════════════════════════ */
+.toc {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  padding: 28px 32px;
+  margin: 40px 0;
+  position: relative;
+  overflow: hidden;
+}
+.toc::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan), var(--purple));
+}
+.toc-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+}
+.toc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 13px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text2);
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.toc-item:hover {
+  border-color: var(--border2);
+  background: rgba(56,189,248,0.05);
+  color: var(--blue2);
+  transform: translateX(3px);
+}
+.toc-num { font-family: var(--mono); font-size: 10px; color: var(--blue); min-width: 22px; }
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION LAYOUT
+═══════════════════════════════════════════════════════════ */
+.section { margin: 80px 0 32px; }
+.section-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--cyan);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(34,211,238,0.3), transparent);
+}
+.section h2 {
+  font-family: var(--display);
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 10px;
+}
+.section-desc { color: var(--muted); font-size: 15px; margin-bottom: 32px; font-weight: 400; }
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border2), transparent);
+  margin: 80px 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════════════════════ */
+.card {
+  background: var(--glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-bottom: 14px;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(56,189,248,0.06), transparent 60%);
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.card:hover::after { opacity: 1; }
+.card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.card-title {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card p { color: var(--muted); font-size: 14px; line-height: 1.75; }
+.icon-box {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.ib-blue   { background: rgba(56,189,248,0.15); }
+.ib-green  { background: rgba(74,222,128,0.15); }
+.ib-amber  { background: rgba(251,191,36,0.15); }
+.ib-purple { background: rgba(167,139,250,0.15); }
+.ib-cyan   { background: rgba(34,211,238,0.15); }
+.ib-red    { background: rgba(248,113,113,0.15); }
+.ib-pink   { background: rgba(244,114,182,0.15); }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media(max-width:700px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+/* Info Boxes */
+.hbox {
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 18px 0;
+  font-size: 14px;
+  border-left: 3px solid;
+  line-height: 1.7;
+}
+.hbox strong { display: block; margin-bottom: 6px; }
+.hbox-blue   { background:rgba(56,189,248,0.06);  border-color:var(--blue);   color:var(--text2); }
+.hbox-green  { background:rgba(74,222,128,0.06);  border-color:var(--green);  color:var(--text2); }
+.hbox-amber  { background:rgba(251,191,36,0.06);  border-color:var(--amber);  color:var(--text2); }
+.hbox-purple { background:rgba(167,139,250,0.06); border-color:var(--purple); color:var(--text2); }
+.hbox-cyan   { background:rgba(34,211,238,0.06);  border-color:var(--cyan);   color:var(--text2); }
+
+/* ═══════════════════════════════════════════════════════════
+   INTERACTIVE CODE EDITOR
+═══════════════════════════════════════════════════════════ */
+.vscode-editor {
+  background: #0d1117;
+  border: 1px solid rgba(56,189,248,0.15);
+  border-radius: 14px;
+  overflow: hidden;
+  margin: 20px 0;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.vscode-titlebar {
+  background: #161b22;
+  border-bottom: 1px solid rgba(56,189,248,0.1);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.vscode-dots { display: flex; gap: 6px; }
+.vsd { width: 12px; height: 12px; border-radius: 50%; }
+.vsd-r { background: #ff5f57; }
+.vsd-y { background: #febc2e; }
+.vsd-g { background: #28c840; }
+.vscode-tabs {
+  display: flex;
+  gap: 0;
+  margin-left: 12px;
+  flex: 1;
+}
+.vscode-tab {
+  padding: 2px 16px;
+  font-size: 12px;
+  color: var(--muted);
+  border-right: 1px solid rgba(56,189,248,0.08);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vscode-tab.active { color: var(--blue2); background: rgba(56,189,248,0.07); border-bottom: 1px solid var(--blue); }
+.vscode-body {
+  display: flex;
+  min-height: 200px;
+}
+.line-numbers {
+  padding: 20px 0;
+  background: rgba(0,0,0,0.2);
+  min-width: 44px;
+  text-align: right;
+  color: #30363d;
+  font-size: 12px;
+  line-height: 1.8;
+  user-select: none;
+  border-right: 1px solid rgba(56,189,248,0.05);
+}
+.line-numbers span { display: block; padding: 0 12px 0 8px; }
+.code-content {
+  padding: 20px 20px;
+  overflow-x: auto;
+  line-height: 1.8;
+  flex: 1;
+}
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--blue);
+  vertical-align: middle;
+  animation: cursorBlink 1s step-end infinite;
+  box-shadow: 0 0 8px var(--blue);
+}
+@keyframes cursorBlink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+.vscode-statusbar {
+  background: #1e3a5f;
+  padding: 4px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  justify-content: space-between;
+}
+.status-items { display: flex; gap: 16px; align-items: center; }
+.status-ok { color: var(--green); }
+/* Syntax highlighting */
+.c-comment { color: #6e7681; }
+.c-kw    { color: #ff7b72; }
+.c-fn    { color: #d2a8ff; }
+.c-str   { color: #a5d6ff; }
+.c-num   { color: #79c0ff; }
+.c-const { color: #ffa657; }
+.c-var   { color: #e6edf3; }
+.c-op    { color: #79c0ff; }
+.c-type  { color: #7ee787; }
+.c-dec   { color: #ffa657; }
+
+/* Run Button */
+.run-bar {
+  background: #161b22;
+  border-top: 1px solid rgba(56,189,248,0.1);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.btn-run {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 18px;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, #22863a, #2ea043);
+  color: #fff;
+  transition: all 0.2s;
+}
+.btn-run:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(46,160,67,0.4); }
+.btn-run:active { transform: translateY(0); }
+.btn-run-blue {
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  color: #000;
+  box-shadow: 0 2px 10px rgba(56,189,248,0.3);
+}
+.run-label { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+/* ═══════════════════════════════════════════════════════════
+   TERMINAL SIMULATION
+═══════════════════════════════════════════════════════════ */
+.terminal {
+  background: #0a0e17;
+  border: 1px solid rgba(74,222,128,0.2);
+  border-radius: 14px;
+  overflow: hidden;
+  margin: 16px 0;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.terminal-header {
+  background: #111827;
+  border-bottom: 1px solid rgba(74,222,128,0.1);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.terminal-dots { display: flex; gap: 6px; }
+.terminal-title {
+  font-size: 12px;
+  color: var(--muted);
+  flex: 1;
+  text-align: center;
+}
+.terminal-body {
+  padding: 18px 20px;
+  min-height: 100px;
+  max-height: 320px;
+  overflow-y: auto;
+  line-height: 1.7;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74,222,128,0.2) transparent;
+}
+.t-line { display: block; margin-bottom: 2px; }
+.t-prompt { color: var(--green); }
+.t-cmd    { color: var(--text); }
+.t-info   { color: var(--blue); }
+.t-success{ color: var(--green); }
+.t-warn   { color: var(--amber); }
+.t-error  { color: var(--red); }
+.t-muted  { color: var(--muted); }
+.t-cursor {
+  display: inline-block;
+  width: 8px; height: 14px;
+  background: var(--green);
+  vertical-align: middle;
+  animation: cursorBlink 1s step-end infinite;
+  margin-left: 2px;
+}
+.terminal-footer {
+  background: #0d1117;
+  border-top: 1px solid rgba(74,222,128,0.08);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BROWSER SIMULATION
+═══════════════════════════════════════════════════════════ */
+.browser-sim {
+  background: #f0f2f5;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(56,189,248,0.2);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  margin: 16px 0;
+}
+.browser-chrome {
+  background: #202124;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.browser-dots2 { display: flex; gap: 6px; }
+.browser-bar {
+  flex: 1;
+  background: #35363a;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #9aa0a6;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.browser-lock { color: var(--green); font-size: 10px; }
+.browser-content {
+  background: #fff;
+  min-height: 200px;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+.browser-page {
+  padding: 28px 32px;
+  font-family: var(--sans);
+  color: #202124;
+}
+.browser-page-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #202124;
+}
+/* Typing animation indicator */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.typing-dot {
+  width: 5px; height: 5px;
+  background: var(--blue);
+  border-radius: 50%;
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+  0%,80%,100% { transform: translateY(0); }
+  40% { transform: translateY(-5px); }
+}
+/* Assertion badges */
+.assert-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  margin: 4px 4px 4px 0;
+}
+.assert-pass { background: rgba(74,222,128,0.15); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+.assert-fail { background: rgba(248,113,113,0.15); color: var(--red);   border: 1px solid rgba(248,113,113,0.3); }
+.assert-run  { background: rgba(56,189,248,0.15);  color: var(--blue);  border: 1px solid rgba(56,189,248,0.3); }
+
+/* ═══════════════════════════════════════════════════════════
+   COMPARISON TABLE
+═══════════════════════════════════════════════════════════ */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.compare-table th {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border2);
+}
+.compare-table th:nth-child(2) { color: var(--red); }
+.compare-table th:nth-child(3) { color: var(--green); }
+.compare-table td {
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(56,189,248,0.05);
+  color: var(--muted);
+  vertical-align: top;
+}
+.compare-table td:first-child { color: var(--text2); font-weight: 500; }
+.compare-table tr:hover td { background: rgba(56,189,248,0.03); }
+.t-red   { color: var(--red)  !important; }
+.t-green { color: var(--green)!important; }
+.t-amber { color: var(--amber)!important; }
+
+/* ═══════════════════════════════════════════════════════════
+   FOLDER TREE (Interactive)
+═══════════════════════════════════════════════════════════ */
+.folder-tree {
+  background: #0a0e17;
+  border: 1px solid rgba(56,189,248,0.12);
+  border-radius: 14px;
+  padding: 22px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.9;
+}
+.f-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+.f-row:hover { background: rgba(56,189,248,0.07); }
+.f-row.selected { background: rgba(56,189,248,0.12); }
+.f-icon  { font-size: 13px; flex-shrink: 0; }
+.f-dir   { color: var(--blue2); font-weight: 600; }
+.f-file  { color: var(--muted); }
+.f-spec  { color: var(--cyan); }
+.f-config{ color: var(--amber); }
+.f-pkg   { color: var(--green); }
+.f-comment-inline { color: #374151; font-size: 11px; margin-left: auto; }
+.f-children {
+  overflow: hidden;
+  max-height: 1000px;
+  transition: max-height 0.3s ease;
+}
+.f-children.collapsed { max-height: 0; }
+.f-tooltip {
+  position: fixed;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--text2);
+  max-width: 260px;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  line-height: 1.6;
+  display: none;
+}
+.f-tooltip.visible { display: block; }
+.f-tooltip-title { color: var(--blue); font-weight: 600; margin-bottom: 4px; }
+
+/* ═══════════════════════════════════════════════════════════
+   WORKFLOW ANIMATION
+═══════════════════════════════════════════════════════════ */
+.workflow-wrap {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  margin: 24px 0;
+  overflow-x: auto;
+}
+.workflow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  justify-content: center;
+  min-width: 500px;
+  position: relative;
+}
+.wf-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+.wf-node {
+  width: 80px; height: 80px;
+  border-radius: 20px;
+  border: 2px solid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 24px;
+  transition: all 0.4s;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.wf-node::before {
+  content: '';
+  position: absolute; inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+  border-radius: inherit;
+}
+.wf-node.active::before { opacity: 0.15; }
+.wf-node.active { transform: scale(1.12); }
+.wf-node-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-align: center;
+}
+.wf-arrow {
+  width: 60px;
+  height: 2px;
+  position: relative;
+  margin: 0 -4px;
+  margin-bottom: 32px;
+}
+.wf-arrow-line {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  width: 0%;
+  transition: width 0.5s ease;
+  box-shadow: var(--glow-blue);
+}
+.wf-arrow.active .wf-arrow-line { width: 100%; }
+.wf-arrow::after {
+  content: '▶';
+  position: absolute;
+  right: -6px;
+  top: -7px;
+  font-size: 10px;
+  color: var(--cyan);
+  opacity: 0;
+  transition: opacity 0.3s 0.4s;
+}
+.wf-arrow.active::after { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════════
+   BROWSER GRID
+═══════════════════════════════════════════════════════════ */
+.browser-grid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 14px;
+  margin: 20px 0;
+}
+@media(max-width:600px) { .browser-grid { grid-template-columns: 1fr; } }
+.browser-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  text-align: center;
+  transition: all 0.25s;
+}
+.browser-card:hover { border-color: var(--border2); transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+.browser-emoji { font-size: 32px; margin-bottom: 10px; }
+.browser-name { font-family: var(--display); font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+.browser-sub { font-size: 12px; color: var(--muted); }
+
+/* ═══════════════════════════════════════════════════════════
+   QUIZ CARDS
+═══════════════════════════════════════════════════════════ */
+.quiz-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.quiz-question {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.quiz-opt {
+  padding: 11px 16px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text2);
+  transition: all 0.2s;
+  background: rgba(56,189,248,0.02);
+}
+.quiz-opt:hover { border-color: var(--border2); background: rgba(56,189,248,0.06); }
+.quiz-opt.correct { border-color: var(--green); background: rgba(74,222,128,0.1); color: var(--green); }
+.quiz-opt.wrong   { border-color: var(--red);   background: rgba(248,113,113,0.1); color: var(--red); }
+.quiz-opt.disabled{ pointer-events: none; opacity: 0.6; }
+.quiz-feedback {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: 9px;
+  font-size: 13px;
+  display: none;
+  line-height: 1.6;
+}
+.quiz-feedback.show { display: block; animation: fadeIn 0.3s ease; }
+.quiz-feedback.correct-fb { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2); color: var(--green); }
+.quiz-feedback.wrong-fb   { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2); color: var(--red); }
+
+/* ═══════════════════════════════════════════════════════════
+   INTERVIEW Q&A (Expandable)
+═══════════════════════════════════════════════════════════ */
+.qa-item {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.qa-item:hover { border-color: var(--border2); }
+.qa-q {
+  padding: 16px 20px;
+  font-weight: 600;
+  color: var(--blue2);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+  font-size: 14px;
+  justify-content: space-between;
+}
+.qa-q-text { flex: 1; }
+.qa-chevron {
+  color: var(--muted);
+  transition: transform 0.3s;
+  font-size: 12px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.qa-item.open .qa-chevron { transform: rotate(180deg); color: var(--blue); }
+.qa-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.badge-beginner { background: rgba(74,222,128,0.15); color: var(--green); }
+.badge-intermediate { background: rgba(251,191,36,0.15); color: var(--amber); }
+.qa-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+.qa-item.open .qa-a { max-height: 600px; }
+.qa-a-inner {
+  padding: 0 20px 18px;
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.8;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.qa-a-inner code { font-family: var(--mono); font-size: 11.5px; background: rgba(56,189,248,0.1); color: var(--blue2); padding: 2px 7px; border-radius: 5px; }
+
+/* ═══════════════════════════════════════════════════════════
+   INTERACTIVE SIMULATION PANELS
+═══════════════════════════════════════════════════════════ */
+.sim-panel {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin: 24px 0;
+}
+.sim-header {
+  background: rgba(56,189,248,0.05);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sim-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--blue2);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sim-controls { display: flex; gap: 8px; align-items: center; }
+.sim-body { padding: 20px; }
+.sim-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media(max-width:650px) { .sim-layout { grid-template-columns: 1fr; } }
+.sim-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  opacity: 0.4;
+  transition: opacity 0.4s;
+}
+.sim-step:last-child { border-bottom: none; }
+.sim-step.active { opacity: 1; }
+.sim-step.done { opacity: 0.7; }
+.sim-step-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.sim-step.active .sim-step-num {
+  background: rgba(56,189,248,0.2);
+  border-color: var(--blue);
+  color: var(--blue);
+  box-shadow: var(--glow-blue);
+}
+.sim-step.done .sim-step-num {
+  background: rgba(74,222,128,0.2);
+  border-color: var(--green);
+  color: var(--green);
+}
+.sim-step-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.sim-step-label { font-weight: 600; color: var(--text); font-size: 13px; }
+
+/* Status bar for simulations */
+.sim-status-bar {
+  background: #070b12;
+  border-top: 1px solid var(--border);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.status-dot.running { background: var(--amber); animation: pulseDot 1s ease infinite; }
+.status-dot.success { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.status-dot.fail    { background: var(--red); }
+@keyframes pulseDot {
+  0%,100% { transform: scale(1); } 50% { transform: scale(1.3); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   REFERENCES
+═══════════════════════════════════════════════════════════ */
+.ref-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px,1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.ref-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  text-decoration: none;
+  transition: all 0.25s;
+  display: block;
+}
+.ref-card:hover { border-color: var(--border2); background: var(--glass2); transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+.ref-emoji { font-size: 22px; margin-bottom: 8px; }
+.ref-title { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 4px; }
+.ref-url   { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+/* ═══════════════════════════════════════════════════════════
+   REEL IDEAS
+═══════════════════════════════════════════════════════════ */
+.reel-card {
+  background: linear-gradient(135deg, var(--glass) 0%, rgba(167,139,250,0.05) 100%);
+  border: 1px solid rgba(167,139,250,0.2);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-bottom: 12px;
+  transition: all 0.25s;
+}
+.reel-card:hover { border-color: rgba(167,139,250,0.4); }
+.reel-num  { font-family: var(--mono); font-size: 10px; color: var(--purple); margin-bottom: 8px; }
+.reel-hook { font-family: var(--display); font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 10px; }
+.reel-details { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+/* ═══════════════════════════════════════════════════════════
+   INLINE CODE + UTILS
+═══════════════════════════════════════════════════════════ */
+code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: rgba(56,189,248,0.1);
+  color: var(--blue2);
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+.checklist { list-style: none; padding: 0; }
+.checklist li {
+  padding: 6px 0;
+  color: var(--muted);
+  font-size: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.checklist li::before {
+  content: '✦';
+  color: var(--cyan);
+  font-size: 10px;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════════════ */
+.footer {
+  text-align: center;
+  padding: 40px 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  margin-top: 80px;
+}
+.footer span { color: var(--cyan); }
+
+/* ═══════════════════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════════════════ */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+@keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:none; } }
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.glow-text {
+  background: linear-gradient(90deg, var(--blue), var(--cyan), var(--blue));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+.fade-in { animation: fadeIn 0.5s ease both; }
+
+/* Scroll reveal */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════ */
+@media(max-width: 900px) {
+  :root { --sidebar-w: 0px; }
+  .sidebar { transform: translateX(-260px); --sidebar-w: 260px; }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-toggle { display: flex; }
+  .main { margin-left: 0; }
+  .content { padding: 40px 18px 100px; }
+}
+@media(max-width: 600px) {
+  .hero { padding: 60px 0 40px; }
+  .hero h1 { font-size: 36px; }
+  .hero-sub { font-size: 15px; }
+  .toc { padding: 20px; }
+  .workflow-wrap { padding: 20px; }
+}
+
+/* Mobile sidebar overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 99;
+  backdrop-filter: blur(2px);
+}
+.sidebar-overlay.show { display: block; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border3); }
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND FX -->
+<div class="bg-fx">
+  <div class="bg-grid"></div>
+  <div class="bg-orb orb1"></div>
+  <div class="bg-orb orb2"></div>
+  <div class="bg-orb orb3"></div>
+  <!-- Particles injected by JS -->
+</div>
+
+<!-- File Tooltip -->
+<div class="f-tooltip" id="fileTooltip">
+  <div class="f-tooltip-title" id="ttTitle">File</div>
+  <div id="ttBody">Description here</div>
+</div>
+
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Mobile Toggle -->
+<button class="sidebar-toggle" id="sidebarToggle">☰</button>
+
+<!-- ════════════════════ SIDEBAR ════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">🎭</div>
+    <div>
+      <div class="logo-text">Playwright</div>
+      <div class="logo-sub">Learning Platform</div>
+    </div>
+  </div>
+
+  <div class="sidebar-progress">
+    <div class="progress-label">
+      <span>Chapter Progress</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-group-label">Chapter 01</div>
+    <a class="nav-item active" href="#theory"  data-section="theory">
+      <span class="nav-num">01</span>
+      <span class="nav-icon">📖</span>
+      Theory &amp; Concepts
+      <span class="nav-done">✓</span>
+    </a>
+    <a class="nav-item" href="#folder" data-section="folder">
+      <span class="nav-num">02</span>
+      <span class="nav-icon">📁</span>
+      Folder Structure
+      <span class="nav-done">✓</span>
+    </a>
+    <a class="nav-item" href="#code" data-section="code">
+      <span class="nav-num">03</span>
+      <span class="nav-icon">💻</span>
+      Practical Code
+      <span class="nav-done">✓</span>
+    </a>
+    <a class="nav-item" href="#visual" data-section="visual">
+      <span class="nav-num">04</span>
+      <span class="nav-icon">🗺</span>
+      Visual Diagrams
+      <span class="nav-done">✓</span>
+    </a>
+    <a class="nav-item" href="#simulations" data-section="simulations">
+      <span class="nav-num">05</span>
+      <span class="nav-icon">🚀</span>
+      Live Simulations
+      <span class="nav-done">✓</span>
+    </a>
+    <a class="nav-item" href="#quiz" data-section="quiz">
+      <span class="nav-num">06</span>
+      <span class="nav-icon">🧠</span>
+      Knowledge Quiz
+      <span class="nav-done">✓</span>
+    </a>
+    <a class="nav-item" href="#interview" data-section="interview">
+      <span class="nav-num">07</span>
+      <span class="nav-icon">💼</span>
+      Interview Prep
+      <span class="nav-done">✓</span>
+    </a>
+    <a class="nav-item" href="#refs" data-section="refs">
+      <span class="nav-num">08</span>
+      <span class="nav-icon">🔗</span>
+      References
+      <span class="nav-done">✓</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div>v1.0 · Made for Learners</div>
+    <div style="color:var(--blue);margin-top:4px;">🎭 playwright.dev</div>
+  </div>
+</aside>
+
+<!-- ════════════════════ MAIN CONTENT ════════════════════ -->
+<main class="main">
+<div class="content">
+
+  <!-- ─── HERO ─── -->
+  <div class="hero">
+    <div class="chapter-badge">
+      <span class="badge-dot"></span>
+      Chapter 01 · Automation Engineering
+    </div>
+    <h1>Introduction to<br>Playwright</h1>
+    <p class="hero-sub">The complete interactive learning module for modern browser automation — theory, code, live simulations, and interview prep.</p>
+    <div class="hero-pills">
+      <span class="pill pill-blue">TypeScript / JavaScript</span>
+      <span class="pill pill-green">Cross-Browser</span>
+      <span class="pill pill-amber">Auto-Wait</span>
+      <span class="pill pill-purple">Parallel Testing</span>
+      <span class="pill pill-cyan">Microsoft Open Source</span>
+    </div>
+    <div class="hero-cta">
+      <a href="#theory" class="btn btn-primary">▶ Start Learning</a>
+      <a href="#simulations" class="btn btn-ghost">🚀 Run Simulations</a>
+    </div>
+  </div>
+
+  <!-- ─── TOC ─── -->
+  <div class="toc reveal">
+    <div class="toc-title">📋 Module Contents</div>
+    <div class="toc-grid">
+      <a class="toc-item" href="#theory">  <span class="toc-num">01</span>Theory &amp; Concepts</a>
+      <a class="toc-item" href="#folder">  <span class="toc-num">02</span>Folder Structure</a>
+      <a class="toc-item" href="#code">    <span class="toc-num">03</span>Practical Code</a>
+      <a class="toc-item" href="#visual">  <span class="toc-num">04</span>Visual Diagrams</a>
+      <a class="toc-item" href="#simulations"><span class="toc-num">05</span>Live Simulations</a>
+      <a class="toc-item" href="#quiz">    <span class="toc-num">06</span>Knowledge Quiz</a>
+      <a class="toc-item" href="#interview"><span class="toc-num">07</span>Interview Prep</a>
+      <a class="toc-item" href="#refs">    <span class="toc-num">08</span>References</a>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 01: THEORY
+  ═══════════════════════════════════════════════ -->
+  <div id="theory" class="section reveal">
+    <div class="section-label">01 · Theory &amp; Concepts</div>
+    <h2>What is Playwright?</h2>
+    <p class="section-desc">The modern standard for reliable, fast, and scalable browser automation.</p>
+
+    <div class="hbox hbox-blue">
+      <strong>Definition</strong>
+      Playwright is an open-source Node.js library developed by Microsoft that provides a high-level API to control Chromium, Firefox, and WebKit browsers. It enables reliable end-to-end testing, web scraping, screenshot generation, and browser automation — all with a single consistent API.
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><div class="icon-box ib-blue">🎭</div>What it does</div>
+        <p>Playwright automates real browser interactions — clicks, form fills, navigation, file downloads, API calls, and network interception — exactly as a real user would experience them.</p>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="icon-box ib-green">🏢</div>Who made it</div>
+        <p>Created by Microsoft engineers (many of whom previously built Puppeteer at Google). Released in 2020, it has grown to be the dominant modern testing framework.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:44px;">
+      <h2 style="font-family:var(--display);font-size:28px;font-weight:800;margin-bottom:16px;">Why Playwright?</h2>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title"><div class="icon-box ib-cyan">⚡</div>Auto-Wait</div>
+        <p>Playwright waits for elements to be actionable before interacting — no more <code>sleep()</code> hacks or flaky tests.</p>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="icon-box ib-purple">🌐</div>True Cross-Browser</div>
+        <p>One test runs on Chrome, Firefox, and Safari (WebKit). Real browsers, not headless-only simulations.</p>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="icon-box ib-green">🚀</div>Built for Speed</div>
+        <p>Parallel test execution out of the box. Tests run in isolated browser contexts — faster than launching new browsers.</p>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="icon-box ib-amber">🔬</div>Network Control</div>
+        <p>Intercept, mock, and modify HTTP requests. Test API failures without touching your backend server.</p>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="icon-box ib-blue">🎯</div>Robust Locators</div>
+        <p>Semantic locators using <code>getByRole</code>, <code>getByText</code>, <code>getByLabel</code> — resilient to UI changes.</p>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="icon-box ib-red">📸</div>Visual Testing</div>
+        <p>Built-in screenshot comparisons, video recording on failure, and Playwright Trace Viewer for debugging.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:44px;margin-bottom:16px;">
+      <h2 style="font-family:var(--display);font-size:28px;font-weight:800;">Playwright vs Selenium</h2>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>🔴 Selenium</th>
+            <th>🟢 Playwright</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Setup Complexity</td><td class="t-red">High — WebDriver needed</td><td class="t-green">Low — npm install done</td></tr>
+          <tr><td>Auto-Wait</td><td class="t-red">Manual waits required</td><td class="t-green">Built-in smart auto-wait</td></tr>
+          <tr><td>Speed</td><td class="t-red">Slower (WebDriver protocol)</td><td class="t-green">Faster (CDP / direct)</td></tr>
+          <tr><td>Parallel Testing</td><td class="t-red">Complex (Grid needed)</td><td class="t-green">Native, zero config</td></tr>
+          <tr><td>Network Mocking</td><td class="t-red">Not built-in</td><td class="t-green">Native <code>route()</code> API</td></tr>
+          <tr><td>Screenshot / Video</td><td class="t-red">Third-party tools</td><td class="t-green">Built-in</td></tr>
+          <tr><td>Community / Trend</td><td class="t-amber">Mature but declining</td><td class="t-green">Fast-growing, modern</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:32px;margin-bottom:16px;">
+      <h2 style="font-family:var(--display);font-size:28px;font-weight:800;">Supported Browsers</h2>
+    </div>
+    <div class="browser-grid">
+      <div class="browser-card">
+        <div class="browser-emoji">🔵</div>
+        <div class="browser-name" style="color:var(--blue)">Chromium</div>
+        <div class="browser-sub">Google Chrome, MS Edge, Brave, Opera</div>
+      </div>
+      <div class="browser-card">
+        <div class="browser-emoji">🟠</div>
+        <div class="browser-name" style="color:var(--amber)">Firefox</div>
+        <div class="browser-sub">Mozilla Gecko engine — full parity</div>
+      </div>
+      <div class="browser-card">
+        <div class="browser-emoji">🍎</div>
+        <div class="browser-name" style="color:var(--muted)">WebKit</div>
+        <div class="browser-sub">Safari on macOS / iOS — without a Mac</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 02: FOLDER STRUCTURE
+  ═══════════════════════════════════════════════ -->
+  <div id="folder" class="section reveal">
+    <div class="section-label">02 · Folder Structure</div>
+    <h2>Project Architecture</h2>
+    <p class="section-desc">Click folders to expand/collapse. Hover files for explanations.</p>
+
+    <div class="folder-tree" id="folderTree">
+      <!-- Injected by JS -->
+    </div>
+
+    <div class="hbox hbox-amber" style="margin-top:20px;">
+      <strong>💡 Pro Tip: Use the generated structure</strong>
+      Running <code>npm init playwright@latest</code> automatically generates this exact structure with a sample test, config, and all dependencies installed.
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 03: PRACTICAL CODE
+  ═══════════════════════════════════════════════ -->
+  <div id="code" class="section reveal">
+    <div class="section-label">03 · Practical Code</div>
+    <h2>Writing Your First Tests</h2>
+    <p class="section-desc">Interactive code editor with live simulation. Hit Run to see it execute.</p>
+
+    <!-- VS Code Editor: First Test -->
+    <div class="vscode-editor">
+      <div class="vscode-titlebar">
+        <div class="vscode-dots"><div class="vsd vsd-r"></div><div class="vsd vsd-y"></div><div class="vsd vsd-g"></div></div>
+        <div class="vscode-tabs">
+          <div class="vscode-tab active">example.spec.ts</div>
+          <div class="vscode-tab">playwright.config.ts</div>
+        </div>
+      </div>
+      <div class="vscode-body">
+        <div class="line-numbers" id="ln1"></div>
+        <div class="code-content" id="code1">
+<span class="c-comment">// Playwright First Test — example.spec.ts</span>
+<span class="c-kw">import</span> <span class="c-var">{ test, expect }</span> <span class="c-kw">from</span> <span class="c-str">'@playwright/test'</span><span class="c-var">;</span>
+
+<span class="c-fn">test</span><span class="c-var">(</span><span class="c-str">'has title'</span><span class="c-var">, </span><span class="c-kw">async</span> <span class="c-var">({ page }) => {</span>
+  <span class="c-comment">// Navigate to the page</span>
+  <span class="c-kw">await</span> <span class="c-var">page.</span><span class="c-fn">goto</span><span class="c-var">(</span><span class="c-str">'https://playwright.dev'</span><span class="c-var">);</span>
+
+  <span class="c-comment">// Assert the title contains Playwright</span>
+  <span class="c-kw">await</span> <span class="c-fn">expect</span><span class="c-var">(page).</span><span class="c-fn">toHaveTitle</span><span class="c-var">(</span><span class="c-str">/Playwright/</span><span class="c-var">);</span>
+<span class="c-var">});</span>
+
+<span class="c-fn">test</span><span class="c-var">(</span><span class="c-str">'get started link'</span><span class="c-var">, </span><span class="c-kw">async</span> <span class="c-var">({ page }) => {</span>
+  <span class="c-kw">await</span> <span class="c-var">page.</span><span class="c-fn">goto</span><span class="c-var">(</span><span class="c-str">'https://playwright.dev'</span><span class="c-var">);</span>
+
+  <span class="c-comment">// Click get started button</span>
+  <span class="c-kw">await</span> <span class="c-var">page.</span><span class="c-fn">getByRole</span><span class="c-var">(</span><span class="c-str">'link'</span><span class="c-var">, { name: </span><span class="c-str">'Get started'</span><span class="c-var"> }).</span><span class="c-fn">click</span><span class="c-var">();</span>
+
+  <span class="c-comment">// Verify navigation</span>
+  <span class="c-kw">await</span> <span class="c-fn">expect</span><span class="c-var">(page).</span><span class="c-fn">toHaveURL</span><span class="c-var">(</span><span class="c-str">/.*intro/</span><span class="c-var">);</span>
+<span class="c-var">});</span>
+        </div>
+      </div>
+      <div class="vscode-statusbar">
+        <div class="status-items">
+          <span>🎭 Playwright</span>
+          <span>TypeScript</span>
+          <span class="status-ok">✓ No errors</span>
+        </div>
+        <div class="status-items">
+          <span>Ln 1, Col 1</span>
+          <span>UTF-8</span>
+        </div>
+      </div>
+      <div class="run-bar">
+        <button class="btn btn-run btn-run-blue" onclick="runTest1()">▶ Run Test</button>
+        <span class="run-label" id="runLabel1">Click Run to execute the simulation</span>
+      </div>
+    </div>
+
+    <!-- Terminal for first test -->
+    <div class="terminal" id="terminal1" style="display:none;">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <div class="vsd vsd-r"></div><div class="vsd vsd-y"></div><div class="vsd vsd-g"></div>
+        </div>
+        <div class="terminal-title">Terminal — playwright test</div>
+      </div>
+      <div class="terminal-body" id="termBody1">
+        <span class="t-cursor"></span>
+      </div>
+      <div class="terminal-footer">
+        <div class="status-dot" id="termDot1"></div>
+        <span id="termStatus1" style="font-family:var(--mono);font-size:11px;color:var(--muted);">Idle</span>
+      </div>
+    </div>
+
+    <!-- Google Search Test -->
+    <div style="margin-top:32px;margin-bottom:8px;">
+      <h3 style="font-family:var(--display);font-size:20px;font-weight:700;color:var(--blue2);">Google Search Automation</h3>
+      <p style="color:var(--muted);font-size:14px;margin-top:6px;">A practical automation example — search Google and verify results.</p>
+    </div>
+
+    <div class="vscode-editor">
+      <div class="vscode-titlebar">
+        <div class="vscode-dots"><div class="vsd vsd-r"></div><div class="vsd vsd-y"></div><div class="vsd vsd-g"></div></div>
+        <div class="vscode-tabs">
+          <div class="vscode-tab active">google-search.spec.ts</div>
+        </div>
+      </div>
+      <div class="vscode-body">
+        <div class="line-numbers" id="ln2"></div>
+        <div class="code-content">
+<span class="c-kw">import</span> <span class="c-var">{ test, expect }</span> <span class="c-kw">from</span> <span class="c-str">'@playwright/test'</span><span class="c-var">;</span>
+
+<span class="c-fn">test</span><span class="c-var">(</span><span class="c-str">'Google Search Automation'</span><span class="c-var">, </span><span class="c-kw">async</span> <span class="c-var">({ page }) => {</span>
+  <span class="c-comment">// Step 1: Open Google</span>
+  <span class="c-kw">await</span> <span class="c-var">page.</span><span class="c-fn">goto</span><span class="c-var">(</span><span class="c-str">'https://google.com'</span><span class="c-var">);</span>
+
+  <span class="c-comment">// Step 2: Find search box and type</span>
+  <span class="c-kw">await</span> <span class="c-var">page.</span><span class="c-fn">getByRole</span><span class="c-var">(</span><span class="c-str">'combobox'</span><span class="c-var">).</span><span class="c-fn">fill</span><span class="c-var">(</span><span class="c-str">'Playwright testing'</span><span class="c-var">);</span>
+
+  <span class="c-comment">// Step 3: Press Enter to search</span>
+  <span class="c-kw">await</span> <span class="c-var">page.</span><span class="c-fn">keyboard.</span><span class="c-fn">press</span><span class="c-var">(</span><span class="c-str">'Enter'</span><span class="c-var">);</span>
+
+  <span class="c-comment">// Step 4: Assert results appeared</span>
+  <span class="c-kw">await</span> <span class="c-fn">expect</span><span class="c-var">(page.</span><span class="c-fn">getByRole</span><span class="c-var">(</span><span class="c-str">'main'</span><span class="c-var">)).</span><span class="c-fn">toBeVisible</span><span class="c-var">();</span>
+  <span class="c-kw">await</span> <span class="c-fn">expect</span><span class="c-var">(page).</span><span class="c-fn">toHaveURL</span><span class="c-var">(</span><span class="c-str">/search/</span><span class="c-var">);</span>
+<span class="c-var">});</span>
+        </div>
+      </div>
+      <div class="run-bar">
+        <button class="btn btn-run btn-run-blue" onclick="runGoogleSim()">▶ Run Simulation</button>
+        <span class="run-label" id="runLabel2">Simulates Google Search automation</span>
+      </div>
+    </div>
+
+    <!-- Browser Simulation Output -->
+    <div id="googleSimContainer" style="display:none;">
+      <div class="sim-panel">
+        <div class="sim-header">
+          <div class="sim-title">🌐 Browser Automation — Google Search</div>
+          <div class="sim-controls">
+            <span id="googleSimStatus" class="assert-run">⟳ Running</span>
+          </div>
+        </div>
+        <div class="sim-body">
+          <div class="sim-layout">
+            <!-- Steps -->
+            <div>
+              <p style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.1em;">Execution Steps</p>
+              <div class="sim-step" id="gStep1">
+                <div class="sim-step-num">1</div>
+                <div class="sim-step-text"><div class="sim-step-label">Launch Browser</div>Chromium browser starting up...</div>
+              </div>
+              <div class="sim-step" id="gStep2">
+                <div class="sim-step-num">2</div>
+                <div class="sim-step-text"><div class="sim-step-label">Navigate to Google</div>page.goto('https://google.com')</div>
+              </div>
+              <div class="sim-step" id="gStep3">
+                <div class="sim-step-num">3</div>
+                <div class="sim-step-text"><div class="sim-step-label">Type Search Query</div>Filling "Playwright testing"</div>
+              </div>
+              <div class="sim-step" id="gStep4">
+                <div class="sim-step-num">4</div>
+                <div class="sim-step-text"><div class="sim-step-label">Press Enter</div>keyboard.press('Enter')</div>
+              </div>
+              <div class="sim-step" id="gStep5">
+                <div class="sim-step-num">5</div>
+                <div class="sim-step-text"><div class="sim-step-label">Assert Results</div>expect(page).toHaveURL(/search/)</div>
+              </div>
+            </div>
+            <!-- Browser Preview -->
+            <div>
+              <div class="browser-sim" id="googleBrowser">
+                <div class="browser-chrome">
+                  <div class="browser-dots2">
+                    <div class="vsd vsd-r"></div><div class="vsd vsd-y"></div><div class="vsd vsd-g"></div>
+                  </div>
+                  <div class="browser-bar">
+                    <span class="browser-lock">🔒</span>
+                    <span id="browserURL">about:blank</span>
+                  </div>
+                </div>
+                <div class="browser-content">
+                  <div class="browser-page" id="browserPage">
+                    <div style="color:#999;font-size:13px;">Waiting to launch...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="sim-status-bar">
+          <div class="status-dot" id="gSimDot"></div>
+          <span id="gSimStatusText" style="font-family:var(--mono);font-size:11px;">Ready</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 04: VISUAL DIAGRAMS
+  ═══════════════════════════════════════════════ -->
+  <div id="visual" class="section reveal">
+    <div class="section-label">04 · Visual Diagrams</div>
+    <h2>How Playwright Works</h2>
+    <p class="section-desc">Click the workflow below to animate the execution flow.</p>
+
+    <div class="workflow-wrap">
+      <div class="workflow" id="workflow">
+        <div class="wf-step">
+          <div class="wf-node" id="wfn0" style="border-color:rgba(56,189,248,0.3);background:rgba(56,189,248,0.07);" onclick="animateWorkflow(0)">
+            💻
+            <div class="wf-node-label" style="font-size:9px;color:var(--muted);">Your Code</div>
+          </div>
+          <div class="wf-node-label">Test Script</div>
+        </div>
+        <div class="wf-arrow" id="wfa0"><div class="wf-arrow-line"></div></div>
+        <div class="wf-step">
+          <div class="wf-node" id="wfn1" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.07);" onclick="animateWorkflow(1)">
+            🎭
+            <div class="wf-node-label" style="font-size:9px;color:var(--muted);">Engine</div>
+          </div>
+          <div class="wf-node-label">Playwright</div>
+        </div>
+        <div class="wf-arrow" id="wfa1"><div class="wf-arrow-line"></div></div>
+        <div class="wf-step">
+          <div class="wf-node" id="wfn2" style="border-color:rgba(34,211,238,0.3);background:rgba(34,211,238,0.07);" onclick="animateWorkflow(2)">
+            ⚡
+            <div class="wf-node-label" style="font-size:9px;color:var(--muted);">Protocol</div>
+          </div>
+          <div class="wf-node-label">CDP / WS</div>
+        </div>
+        <div class="wf-arrow" id="wfa2"><div class="wf-arrow-line"></div></div>
+        <div class="wf-step">
+          <div class="wf-node" id="wfn3" style="border-color:rgba(251,191,36,0.3);background:rgba(251,191,36,0.07);" onclick="animateWorkflow(3)">
+            🌐
+            <div class="wf-node-label" style="font-size:9px;color:var(--muted);">Real Browser</div>
+          </div>
+          <div class="wf-node-label">Browser</div>
+        </div>
+        <div class="wf-arrow" id="wfa3"><div class="wf-arrow-line"></div></div>
+        <div class="wf-step">
+          <div class="wf-node" id="wfn4" style="border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.07);" onclick="animateWorkflow(4)">
+            ✅
+            <div class="wf-node-label" style="font-size:9px;color:var(--muted);">Results</div>
+          </div>
+          <div class="wf-node-label">Assertions</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:20px;">
+        <button class="btn btn-ghost" onclick="startWorkflowAnim()" style="font-size:13px;padding:8px 20px;">▶ Animate Flow</button>
+        <button class="btn" onclick="resetWorkflow()" style="font-size:13px;padding:8px 20px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;cursor:pointer;margin-left:8px;">↺ Reset</button>
+      </div>
+    </div>
+
+    <!-- Architecture Diagram -->
+    <div style="margin-top:32px;margin-bottom:16px;">
+      <h3 style="font-family:var(--display);font-size:20px;font-weight:700;color:var(--text);">Architecture Overview</h3>
+    </div>
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:12px;align-items:center;padding:8px 0;">
+        <!-- Layer 1 -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+          <div style="background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:10px 20px;text-align:center;font-size:13px;font-weight:600;color:var(--blue2);min-width:130px;">
+            <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:4px;">YOUR LAYER</div>
+            TypeScript / JS Tests
+          </div>
+        </div>
+        <div style="color:var(--border2);font-size:18px;">↓</div>
+        <!-- Layer 2 -->
+        <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:10px 24px;text-align:center;font-size:13px;font-weight:600;color:var(--purple);min-width:200px;">
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:4px;">PLAYWRIGHT API</div>
+          page · locator · expect
+        </div>
+        <div style="color:var(--border2);font-size:18px;">↓</div>
+        <!-- Layer 3 -->
+        <div style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);border-radius:10px;padding:10px 24px;text-align:center;font-size:13px;font-weight:600;color:var(--cyan);min-width:200px;">
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:4px;">PROTOCOL</div>
+          CDP / WebSocket
+        </div>
+        <div style="color:var(--border2);font-size:18px;">↓</div>
+        <!-- Layer 4 -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+          <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:10px;padding:10px 16px;text-align:center;font-size:12px;font-weight:600;color:var(--amber);min-width:100px;">🔵 Chromium</div>
+          <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:10px;padding:10px 16px;text-align:center;font-size:12px;font-weight:600;color:var(--amber);min-width:100px;">🟠 Firefox</div>
+          <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:10px;padding:10px 16px;text-align:center;font-size:12px;font-weight:600;color:var(--amber);min-width:100px;">🍎 WebKit</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 05: LIVE SIMULATIONS
+  ═══════════════════════════════════════════════ -->
+  <div id="simulations" class="section reveal">
+    <div class="section-label">05 · Live Simulations</div>
+    <h2>Interactive Playground</h2>
+    <p class="section-desc">Run live simulations of real Playwright automation scenarios.</p>
+
+    <!-- Install Simulation -->
+    <div style="margin-bottom:24px;">
+      <h3 style="font-family:var(--display);font-size:18px;font-weight:700;margin-bottom:8px;color:var(--green);">📦 npm Installation</h3>
+      <div class="terminal">
+        <div class="terminal-header">
+          <div class="terminal-dots"><div class="vsd vsd-r"></div><div class="vsd vsd-y"></div><div class="vsd vsd-g"></div></div>
+          <div class="terminal-title">bash — project setup</div>
+        </div>
+        <div class="terminal-body" id="installTerminal">
+          <span class="t-line"><span class="t-prompt">$</span> <span class="t-cursor"></span></span>
+        </div>
+        <div class="terminal-footer">
+          <div class="status-dot" id="installDot"></div>
+          <span id="installStatus" style="font-family:var(--mono);font-size:11px;color:var(--muted);">Ready</span>
+          <button class="btn-run" onclick="runInstallSim()" style="margin-left:auto;padding:4px 14px;font-size:11px;">▶ Run Install</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Automation -->
+    <div style="margin-bottom:24px;">
+      <h3 style="font-family:var(--display);font-size:18px;font-weight:700;margin-bottom:8px;color:var(--blue2);">🔐 Login Automation Simulation</h3>
+      <div class="vscode-editor" style="margin-bottom:12px;">
+        <div class="vscode-titlebar">
+          <div class="vscode-dots"><div class="vsd vsd-r"></div><div class="vsd vsd-y"></div><div class="vsd vsd-g"></div></div>
+          <div class="vscode-tabs"><div class="vscode-tab active">login.spec.ts</div></div>
+        </div>
+        <div class="vscode-body">
+          <div class="line-numbers" id="ln3"></div>
+          <div class="code-content">
+<span class="c-fn">test</span><span class="c-var">(</span><span class="c-str">'Login with valid credentials'</span><span class="c-var">, </span><span class="c-kw">async</span> <span class="c-var">({ page }) => {</span>
+  <span class="c-kw">await</span> <span class="c-var">page.</span><span class="c-fn">goto</span><span class="c-var">(</span><span class="c-str">'https://app.example.com/login'</span><span class="c-var">);</span>
+
+  <span class="c-comment">// Fill credentials</span>
+  <span class="c-kw">await</span> <span class="c-var">page.</span><span class="c-fn">getByLabel</span><span class="c-var">(</span><span class="c-str">'Email'</span><span class="c-var">).</span><span class="c-fn">fill</span><span class="c-var">(</span><span class="c-str">'user@example.com'</span><span class="c-var">);</span>
+  <span class="c-kw">await</span> <span class="c-var">page.</span><span class="c-fn">getByLabel</span><span class="c-var">(</span><span class="c-str">'Password'</span><span class="c-var">).</span><span class="c-fn">fill</span><span class="c-var">(</span><span class="c-str">'SecureP@ss!'</span><span class="c-var">);</span>
+  <span class="c-kw">await</span> <span class="c-var">page.</span><span class="c-fn">getByRole</span><span class="c-var">(</span><span class="c-str">'button'</span><span class="c-var">, { name: </span><span class="c-str">'Sign In'</span><span class="c-var"> }).</span><span class="c-fn">click</span><span class="c-var">();</span>
+
+  <span class="c-comment">// Assert dashboard loaded</span>
+  <span class="c-kw">await</span> <span class="c-fn">expect</span><span class="c-var">(page).</span><span class="c-fn">toHaveURL</span><span class="c-var">(</span><span class="c-str">/dashboard/</span><span class="c-var">);</span>
+  <span class="c-kw">await</span> <span class="c-fn">expect</span><span class="c-var">(page.</span><span class="c-fn">getByText</span><span class="c-var">(</span><span class="c-str">'Welcome back'</span><span class="c-var">)).</span><span class="c-fn">toBeVisible</span><span class="c-var">();</span>
+<span class="c-var">});</span>
+          </div>
+        </div>
+        <div class="run-bar">
+          <button class="btn btn-run btn-run-blue" onclick="runLoginSim()">▶ Simulate Login</button>
+          <span class="run-label" id="loginRunLabel">Watch the browser automate a login flow</span>
+        </div>
+      </div>
+
+      <!-- Login Browser Sim -->
+      <div id="loginSimContainer" style="display:none;">
+        <div class="browser-sim">
+          <div class="browser-chrome">
+            <div class="browser-dots2"><div class="vsd vsd-r"></div><div class="vsd vsd-y"></div><div class="vsd vsd-g"></div></div>
+            <div class="browser-bar">
+              <span class="browser-lock">🔒</span>
+              <span id="loginURL">app.example.com/login</span>
+            </div>
+          </div>
+          <div class="browser-content">
+            <div class="browser-page" id="loginPage" style="max-width:360px;margin:0 auto;padding:32px 24px;">
+              <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:28px;margin-bottom:8px;">🔐</div>
+                <div style="font-size:20px;font-weight:700;color:#202124;">Sign In</div>
+                <div style="font-size:13px;color:#5f6368;margin-top:4px;">Welcome back</div>
+              </div>
+              <div style="margin-bottom:14px;">
+                <label style="font-size:12px;color:#5f6368;display:block;margin-bottom:4px;">Email</label>
+                <div style="border:2px solid #dadce0;border-radius:6px;padding:10px 14px;font-size:14px;color:#202124;background:#fff;transition:border-color 0.2s;" id="loginEmailField">&nbsp;</div>
+              </div>
+              <div style="margin-bottom:20px;">
+                <label style="font-size:12px;color:#5f6368;display:block;margin-bottom:4px;">Password</label>
+                <div style="border:2px solid #dadce0;border-radius:6px;padding:10px 14px;font-size:14px;color:#202124;background:#fff;" id="loginPassField">&nbsp;</div>
+              </div>
+              <button style="width:100%;background:#1a73e8;color:#fff;border:none;padding:12px;border-radius:6px;font-size:14px;font-weight:600;cursor:default;" id="loginBtn">Sign In</button>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;" id="loginAsserts"></div>
+      </div>
+    </div>
+
+    <!-- Test Runner Output -->
+    <div>
+      <h3 style="font-family:var(--display);font-size:18px;font-weight:700;margin-bottom:8px;color:var(--amber);">📊 Test Runner Output</h3>
+      <button class="btn btn-ghost" onclick="runTestRunner()" style="margin-bottom:12px;font-size:13px;padding:8px 18px;">▶ Run Full Test Suite</button>
+      <div class="terminal" id="testRunnerTerminal">
+        <div class="terminal-header">
+          <div class="terminal-dots"><div class="vsd vsd-r"></div><div class="vsd vsd-y"></div><div class="vsd vsd-g"></div></div>
+          <div class="terminal-title">npx playwright test</div>
+        </div>
+        <div class="terminal-body" id="testRunnerBody" style="min-height:80px;">
+          <span class="t-line t-muted">// Click "Run Full Test Suite" above to simulate</span>
+        </div>
+        <div class="terminal-footer">
+          <div class="status-dot" id="trDot"></div>
+          <span id="trStatus" style="font-family:var(--mono);font-size:11px;color:var(--muted);">Ready</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 06: QUIZ
+  ═══════════════════════════════════════════════ -->
+  <div id="quiz" class="section reveal">
+    <div class="section-label">06 · Knowledge Quiz</div>
+    <h2>Test Your Understanding</h2>
+    <p class="section-desc">Click an answer to check if you got it right.</p>
+
+    <div class="quiz-card">
+      <div class="quiz-question">1. Which company created Playwright?</div>
+      <div class="quiz-options" data-correct="1">
+        <div class="quiz-opt" onclick="checkQuiz(this)">Google</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">Microsoft</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">Meta</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">Cypress.io</div>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+
+    <div class="quiz-card">
+      <div class="quiz-question">2. What is Auto-Wait in Playwright?</div>
+      <div class="quiz-options" data-correct="1">
+        <div class="quiz-opt" onclick="checkQuiz(this)">A plugin you install separately</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">Built-in mechanism that waits for elements to be actionable before interactions</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">A function you call manually before each click</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">A configuration option in playwright.config.ts only</div>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+
+    <div class="quiz-card">
+      <div class="quiz-question">3. Which browsers does Playwright natively support?</div>
+      <div class="quiz-options" data-correct="2">
+        <div class="quiz-opt" onclick="checkQuiz(this)">Chrome and Firefox only</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">Chrome, Firefox, IE11, and Safari</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">Chromium, Firefox, and WebKit</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">Chromium only</div>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+
+    <div class="quiz-card">
+      <div class="quiz-question">4. What is a BrowserContext?</div>
+      <div class="quiz-options" data-correct="0">
+        <div class="quiz-opt" onclick="checkQuiz(this)">An isolated browser session with separate cookies and storage</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">A new browser process for each test</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">A configuration block in playwright.config.ts</div>
+        <div class="quiz-opt" onclick="checkQuiz(this)">The browser's developer tools</div>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 07: INTERVIEW PREP
+  ═══════════════════════════════════════════════ -->
+  <div id="interview" class="section reveal">
+    <div class="section-label">07 · Interview Prep</div>
+    <h2>Interview Questions &amp; Answers</h2>
+    <p class="section-desc">Click any question to reveal the answer. Beginner to intermediate level.</p>
+
+    <div class="qa-item" onclick="toggleQA(this)">
+      <div class="qa-q">
+        <span class="qa-badge badge-beginner">BEGINNER</span>
+        <span class="qa-q-text">What is Playwright and who created it?</span>
+        <span class="qa-chevron">▼</span>
+      </div>
+      <div class="qa-a">
+        <div class="qa-a-inner">Playwright is an open-source browser automation framework created by Microsoft. It provides a unified API to control Chromium, Firefox, and WebKit browsers for end-to-end testing, web scraping, and automation. Released in 2020 by engineers who previously built Puppeteer at Google.</div>
+      </div>
+    </div>
+
+    <div class="qa-item" onclick="toggleQA(this)">
+      <div class="qa-q">
+        <span class="qa-badge badge-beginner">BEGINNER</span>
+        <span class="qa-q-text">Why choose Playwright over Selenium?</span>
+        <span class="qa-chevron">▼</span>
+      </div>
+      <div class="qa-a">
+        <div class="qa-a-inner">Playwright offers: (1) built-in auto-wait — no manual sleeps needed, (2) native parallel execution without Selenium Grid, (3) better performance via direct CDP/WebSocket connection, (4) built-in network interception, screenshot, and video recording, (5) simpler setup — one <code>npm install</code> vs complex WebDriver configuration, (6) modern TypeScript-first API with better IDE support.</div>
+      </div>
+    </div>
+
+    <div class="qa-item" onclick="toggleQA(this)">
+      <div class="qa-q">
+        <span class="qa-badge badge-beginner">BEGINNER</span>
+        <span class="qa-q-text">What are locators in Playwright?</span>
+        <span class="qa-chevron">▼</span>
+      </div>
+      <div class="qa-a">
+        <div class="qa-a-inner">Locators are Playwright's way of finding elements on a page. Unlike Selenium's <code>findElement()</code>, Playwright locators are lazy — only evaluated when you interact with them — and they auto-retry if the element isn't ready yet. Best practice locators: <code>getByRole()</code> (semantic), <code>getByLabel()</code> (forms), <code>getByText()</code> (visible text), <code>getByTestId()</code> (stable custom attribute).</div>
+      </div>
+    </div>
+
+    <div class="qa-item" onclick="toggleQA(this)">
+      <div class="qa-q">
+        <span class="qa-badge badge-beginner">BEGINNER</span>
+        <span class="qa-q-text">What is auto-wait in Playwright?</span>
+        <span class="qa-chevron">▼</span>
+      </div>
+      <div class="qa-a">
+        <div class="qa-a-inner">Auto-wait automatically waits for elements to be in an actionable state before performing interactions. Before a <code>.click()</code>, Playwright checks: attached to DOM → visible → stable (not animating) → enabled → not obscured. This eliminates flaky tests caused by race conditions. Default timeout: 30 seconds.</div>
+      </div>
+    </div>
+
+    <div class="qa-item" onclick="toggleQA(this)">
+      <div class="qa-q">
+        <span class="qa-badge badge-intermediate">INTERMEDIATE</span>
+        <span class="qa-q-text">How does parallel execution work in Playwright?</span>
+        <span class="qa-chevron">▼</span>
+      </div>
+      <div class="qa-a">
+        <div class="qa-a-inner">Playwright runs tests in parallel at two levels: (1) <strong style="color:var(--text);">Worker-level</strong> — multiple test files run simultaneously across CPU cores (configured via <code>workers</code> in playwright.config.ts). (2) <strong style="color:var(--text);">Project-level</strong> — all configured browsers run in parallel. Each test gets its own <code>BrowserContext</code> — an isolated session — so tests don't interfere.</div>
+      </div>
+    </div>
+
+    <div class="qa-item" onclick="toggleQA(this)">
+      <div class="qa-q">
+        <span class="qa-badge badge-intermediate">INTERMEDIATE</span>
+        <span class="qa-q-text">What is a Browser Context?</span>
+        <span class="qa-chevron">▼</span>
+      </div>
+      <div class="qa-a">
+        <div class="qa-a-inner">A <code>BrowserContext</code> is an isolated browser session — like an incognito window. Each context has its own cookies, localStorage, sessionStorage, HTTP auth, and network settings. Multiple contexts run in a single browser process simultaneously, making them much cheaper than launching separate browsers. Use case: test multi-user scenarios — Context A as Admin, Context B as Customer.</div>
+      </div>
+    </div>
+
+    <div class="qa-item" onclick="toggleQA(this)">
+      <div class="qa-q">
+        <span class="qa-badge badge-intermediate">INTERMEDIATE</span>
+        <span class="qa-q-text">What types of assertions does Playwright support?</span>
+        <span class="qa-chevron">▼</span>
+      </div>
+      <div class="qa-a">
+        <div class="qa-a-inner">Two types: (1) <strong style="color:var(--text);">Web-first assertions</strong> — e.g., <code>expect(locator).toBeVisible()</code> — automatically retry until condition is met or timeout. (2) <strong style="color:var(--text);">Generic assertions</strong> — e.g., <code>expect(value).toBe(true)</code> — synchronous checks. Key web-first: <code>toBeVisible()</code>, <code>toBeEnabled()</code>, <code>toHaveText()</code>, <code>toHaveURL()</code>, <code>toHaveTitle()</code>.</div>
+      </div>
+    </div>
+
+    <div class="qa-item" onclick="toggleQA(this)">
+      <div class="qa-q">
+        <span class="qa-badge badge-intermediate">INTERMEDIATE</span>
+        <span class="qa-q-text">What is the Page Object Model (POM)?</span>
+        <span class="qa-chevron">▼</span>
+      </div>
+      <div class="qa-a">
+        <div class="qa-a-inner">POM is a design pattern where each web page/component has a class encapsulating its locators and actions. Benefits: (1) reduces code duplication, (2) improves maintainability — UI changes require updating only the Page class, (3) improves readability — test code reads like a user story: <code>loginPage.login('admin', 'pass')</code>. In Playwright, POM classes accept a <code>Page</code> object in the constructor.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 08: REFERENCES
+  ═══════════════════════════════════════════════ -->
+  <div id="refs" class="section reveal">
+    <div class="section-label">08 · References</div>
+    <h2>Official Learning Resources</h2>
+    <p class="section-desc">Curated resources for your Playwright learning journey.</p>
+
+    <div class="ref-grid">
+      <a class="ref-card" href="https://playwright.dev/docs/intro" target="_blank">
+        <div class="ref-emoji">📚</div>
+        <div class="ref-title">Official Docs</div>
+        <div class="ref-url">playwright.dev/docs/intro</div>
+      </a>
+      <a class="ref-card" href="https://github.com/microsoft/playwright" target="_blank">
+        <div class="ref-emoji">🐙</div>
+        <div class="ref-title">GitHub Repository</div>
+        <div class="ref-url">github.com/microsoft/playwright</div>
+      </a>
+      <a class="ref-card" href="https://playwright.dev/docs/api/class-playwright" target="_blank">
+        <div class="ref-emoji">📖</div>
+        <div class="ref-title">API Reference</div>
+        <div class="ref-url">playwright.dev/docs/api</div>
+      </a>
+      <a class="ref-card" href="https://playwright.dev/docs/trace-viewer-intro" target="_blank">
+        <div class="ref-emoji">🔍</div>
+        <div class="ref-title">Trace Viewer</div>
+        <div class="ref-url">playwright.dev/docs/trace-viewer</div>
+      </a>
+      <a class="ref-card" href="https://playwright.dev/docs/codegen-intro" target="_blank">
+        <div class="ref-emoji">🤖</div>
+        <div class="ref-title">Code Generator</div>
+        <div class="ref-url">playwright.dev/docs/codegen</div>
+      </a>
+      <a class="ref-card" href="https://www.youtube.com/c/playwrightdev" target="_blank">
+        <div class="ref-emoji">▶️</div>
+        <div class="ref-title">YouTube Channel</div>
+        <div class="ref-url">youtube.com/c/playwrightdev</div>
+      </a>
+      <a class="ref-card" href="https://learn.microsoft.com/en-us/azure/playwright-testing/" target="_blank">
+        <div class="ref-emoji">☁️</div>
+        <div class="ref-title">Microsoft Learn</div>
+        <div class="ref-url">learn.microsoft.com/playwright</div>
+      </a>
+      <a class="ref-card" href="https://playwright.dev/community/welcome" target="_blank">
+        <div class="ref-emoji">🎓</div>
+        <div class="ref-title">Community</div>
+        <div class="ref-url">playwright.dev/community</div>
+      </a>
+    </div>
+
+    <div class="hbox hbox-cyan" style="margin-top:24px;">
+      <strong>⚡ Quick Start Command</strong>
+      Run this single command to scaffold a complete Playwright project: <code>npm init playwright@latest</code> — it installs everything automatically.
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Playwright</span> Chapter 01 · Introduction · Interactive Learning Platform<br>
+    Built for the automation engineering community · <span>2025</span>
+  </div>
+
+</div><!-- /content -->
+</main><!-- /main -->
+
+<!-- ════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════ -->
+<script>
+/* ─── PARTICLES ─── */
+(function() {
+  const fx = document.querySelector('.bg-fx');
+  const colors = ['#38bdf8','#22d3ee','#a78bfa','#4ade80'];
+  for (let i = 0; i < 24; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      animation-delay:${Math.random()*8}s;
+      animation-duration:${6+Math.random()*6}s;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;
+    `;
+    fx.appendChild(p);
+  }
+})();
+
+/* ─── SIDEBAR TOGGLE ─── */
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+const toggleBtn = document.getElementById('sidebarToggle');
+toggleBtn.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+});
+overlay.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+});
+
+/* ─── SCROLL REVEAL ─── */
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+/* ─── ACTIVE NAV + PROGRESS ─── */
+const sections = ['theory','folder','code','visual','simulations','quiz','interview','refs'];
+const navItems = document.querySelectorAll('.nav-item[data-section]');
+const progressFill = document.getElementById('progressFill');
+const progressPct = document.getElementById('progressPct');
+let maxSection = 0;
+const sectionObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      navItems.forEach(n => n.classList.remove('active'));
+      const active = document.querySelector(`.nav-item[data-section="${id}"]`);
+      if (active) active.classList.add('active');
+      const idx = sections.indexOf(id);
+      if (idx > maxSection) {
+        maxSection = idx;
+        const pct = Math.round(((maxSection + 1) / sections.length) * 100);
+        progressFill.style.width = pct + '%';
+        progressPct.textContent = pct + '%';
+        // Mark nav as done
+        for (let i = 0; i <= maxSection; i++) {
+          const n = document.querySelector(`.nav-item[data-section="${sections[i]}"]`);
+          if (n) n.classList.add('done');
+        }
+      }
+    }
+  });
+}, { threshold: 0.2 });
+sections.forEach(id => { const el = document.getElementById(id); if(el) sectionObs.observe(el); });
+
+/* ─── LINE NUMBERS ─── */
+function genLineNumbers(containerId, lineCount) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  let html = '';
+  for (let i = 1; i <= lineCount; i++) html += `<span>${i}</span>`;
+  el.innerHTML = html;
+}
+genLineNumbers('ln1', 22);
+genLineNumbers('ln2', 15);
+genLineNumbers('ln3', 12);
+
+/* ─── CARD MOUSE GLOW ─── */
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', ((e.clientX-r.left)/r.width*100)+'%');
+    card.style.setProperty('--my', ((e.clientY-r.top)/r.height*100)+'%');
+  });
+});
+
+/* ─── FOLDER TREE ─── */
+const fileData = {
+  'playwright.config.ts': { icon:'⚙️', color:'c-config', desc:'Main Playwright configuration. Defines browsers, base URL, timeouts, workers, and reporter settings.' },
+  'package.json': { icon:'📦', color:'c-pkg', desc:'Node.js project manifest. Lists all dependencies including @playwright/test and scripts like "test" → "npx playwright test".' },
+  'package-lock.json': { icon:'🔒', color:'f-file', desc:'Auto-generated lockfile. Ensures reproducible installs across machines. Do not edit manually.' },
+  '.gitignore': { icon:'🚫', color:'f-file', desc:'Tells Git which files to ignore. Typically ignores node_modules/, test-results/, playwright-report/' },
+  'example.spec.ts': { icon:'🎯', color:'f-spec', desc:'Sample test file. Contains the basic "has title" and "get started link" tests generated by Playwright init.' },
+  'login.spec.ts': { icon:'🔐', color:'f-spec', desc:'Login automation tests. Uses getByLabel(), getByRole(), and URL assertion patterns.' },
+  'google-search.spec.ts': { icon:'🔍', color:'f-spec', desc:'Google search automation demo. Shows fill(), keyboard.press(), and result validation.' },
+  'LoginPage.ts': { icon:'📄', color:'f-dir', desc:'Page Object for the login page. Encapsulates locators and login/logout methods.' },
+  'DashboardPage.ts': { icon:'📄', color:'f-dir', desc:'Page Object for the dashboard. Contains navigation, stats, and user menu interactions.' },
+  '.last-run.json': { icon:'📊', color:'f-file', desc:'Auto-generated after each run. Stores test results for quick re-run of failed tests.' },
+  'index.html': { icon:'📋', color:'f-file', desc:'Generated HTML report. Open with "npx playwright show-report" for a beautiful UI.' },
+};
+
+const treeHTML = `
+<div class="f-row" onclick="toggleFolder(this)">
+  <span class="f-icon">📂</span>
+  <span class="f-dir">my-playwright-project</span>
+  <span class="f-comment-inline"># root</span>
+</div>
+<div class="f-children" style="padding-left:20px;" id="rootChildren">
+  ${makeFile('playwright.config.ts')}
+  ${makeFile('package.json')}
+  ${makeFile('package-lock.json')}
+  ${makeFile('.gitignore')}
+  <div class="f-row" onclick="toggleFolder(this)">
+    <span class="f-icon">📂</span>
+    <span class="f-dir">tests/</span>
+    <span class="f-comment-inline"># test files</span>
+  </div>
+  <div class="f-children" style="padding-left:20px;" id="testsChildren">
+    ${makeFile('example.spec.ts')}
+    ${makeFile('login.spec.ts')}
+    ${makeFile('google-search.spec.ts')}
+  </div>
+  <div class="f-row" onclick="toggleFolder(this)">
+    <span class="f-icon">📂</span>
+    <span class="f-dir">pages/</span>
+    <span class="f-comment-inline"># page objects</span>
+  </div>
+  <div class="f-children" style="padding-left:20px;">
+    ${makeFile('LoginPage.ts')}
+    ${makeFile('DashboardPage.ts')}
+  </div>
+  <div class="f-row" onclick="toggleFolder(this)">
+    <span class="f-icon">📂</span>
+    <span class="f-dir">playwright-report/</span>
+    <span class="f-comment-inline"># generated</span>
+  </div>
+  <div class="f-children" style="padding-left:20px;" id="reportChildren">
+    ${makeFile('.last-run.json')}
+    ${makeFile('index.html')}
+  </div>
+  <div class="f-row" style="pointer-events:none;">
+    <span class="f-icon">📂</span>
+    <span class="f-dir">test-results/</span>
+    <span class="f-comment-inline"># artifacts</span>
+  </div>
+  <div style="padding-left:20px;">
+    <div class="f-row" style="pointer-events:none;">
+      <span class="f-icon">📁</span>
+      <span class="f-file">screenshots/</span>
+    </div>
+    <div class="f-row" style="pointer-events:none;">
+      <span class="f-icon">📁</span>
+      <span class="f-file">videos/</span>
+    </div>
+    <div class="f-row" style="pointer-events:none;">
+      <span class="f-icon">📁</span>
+      <span class="f-file">traces/</span>
+    </div>
+  </div>
+</div>`;
+
+function makeFile(name) {
+  const d = fileData[name];
+  if (!d) return '';
+  return `<div class="f-row" onmouseenter="showTooltip(event,'${name}')" onmouseleave="hideTooltip()">
+    <span class="f-icon">${d.icon}</span>
+    <span class="${d.color}">${name}</span>
+  </div>`;
+}
+
+document.getElementById('folderTree').innerHTML = treeHTML;
+
+function toggleFolder(row) {
+  const next = row.nextElementSibling;
+  if (next && next.classList.contains('f-children')) {
+    next.classList.toggle('collapsed');
+    const icon = row.querySelector('.f-icon');
+    icon.textContent = next.classList.contains('collapsed') ? '📁' : '📂';
+  }
+}
+
+const tooltip = document.getElementById('fileTooltip');
+function showTooltip(e, name) {
+  const d = fileData[name];
+  if (!d) return;
+  document.getElementById('ttTitle').textContent = name;
+  document.getElementById('ttBody').textContent = d.desc;
+  tooltip.classList.add('visible');
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  let x = e.clientX + 14, y = e.clientY - 10;
+  if (x + 270 > window.innerWidth) x = e.clientX - 280;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+document.addEventListener('mousemove', moveTooltip);
+function hideTooltip() { tooltip.classList.remove('visible'); }
+
+/* ─── WORKFLOW ANIMATION ─── */
+function startWorkflowAnim() {
+  resetWorkflow();
+  setTimeout(() => animateWorkflow(0), 200);
+}
+function animateWorkflow(step) {
+  const nodes = document.querySelectorAll('[id^="wfn"]');
+  const arrows = document.querySelectorAll('[id^="wfa"]');
+  nodes.forEach((n, i) => {
+    if (i === step) n.classList.add('active');
+  });
+  if (step < arrows.length) {
+    setTimeout(() => {
+      arrows[step].classList.add('active');
+      if (step + 1 < nodes.length) setTimeout(() => animateWorkflow(step + 1), 600);
+    }, 300);
+  }
+}
+function resetWorkflow() {
+  document.querySelectorAll('[id^="wfn"]').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('[id^="wfa"]').forEach(a => a.classList.remove('active'));
+}
+
+/* ─── TERMINAL HELPER ─── */
+function typeLines(containerId, lines, delay, dotId, statusId, onDone) {
+  const el = document.getElementById(containerId);
+  const dot = document.getElementById(dotId);
+  const statusEl = document.getElementById(statusId);
+  el.innerHTML = '';
+  if(dot) { dot.classList.remove('success','fail'); dot.classList.add('running'); }
+  if(statusEl) statusEl.textContent = 'Running...';
+  let i = 0;
+  function next() {
+    if (i >= lines.length) {
+      if(dot) { dot.classList.remove('running'); dot.classList.add(lines.some(l=>l.class==='t-error')?'fail':'success'); }
+      if(statusEl) statusEl.textContent = lines.some(l=>l.class==='t-error')?'Failed':'Done';
+      if(onDone) onDone();
+      return;
+    }
+    const line = lines[i++];
+    const span = document.createElement('span');
+    span.className = 't-line ' + (line.class||'t-muted');
+    span.innerHTML = line.html || line.text || '';
+    el.appendChild(span);
+    el.scrollTop = el.scrollHeight;
+    setTimeout(next, line.delay || delay || 180);
+  }
+  next();
+}
+
+/* ─── TEST 1 SIMULATION ─── */
+function runTest1() {
+  const terminal = document.getElementById('terminal1');
+  terminal.style.display = 'block';
+  document.getElementById('runLabel1').textContent = '⟳ Running...';
+  terminal.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const lines = [
+    { text: '$ npx playwright test example.spec.ts', class: 't-prompt', delay: 400 },
+    { text: '', delay: 200 },
+    { html: '<span style="color:#7dd3fc">Running 2 tests using 2 workers</span>', delay: 600 },
+    { text: '', delay: 100 },
+    { html: '  [chromium] › example.spec.ts:4:1 › has title', class: 't-muted', delay: 900 },
+    { html: '  ✓ <span style="color:#4ade80">has title</span> <span style="color:#64748b">(1.2s)</span>', delay: 200 },
+    { html: '  [chromium] › example.spec.ts:11:1 › get started link', class: 't-muted', delay: 700 },
+    { html: '  ✓ <span style="color:#4ade80">get started link</span> <span style="color:#64748b">(2.1s)</span>', delay: 200 },
+    { text: '', delay: 300 },
+    { html: '<span style="color:#4ade80">  2 passed</span> <span style="color:#64748b">(4.8s)</span>', delay: 100 },
+  ];
+  typeLines('termBody1', lines, 150, 'termDot1', 'termStatus1', () => {
+    document.getElementById('runLabel1').textContent = '✓ Tests passed!';
+  });
+}
+
+/* ─── GOOGLE SEARCH SIMULATION ─── */
+let googleRunning = false;
+function runGoogleSim() {
+  if (googleRunning) return;
+  googleRunning = true;
+  const container = document.getElementById('googleSimContainer');
+  container.style.display = 'block';
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('runLabel2').textContent = '⟳ Running simulation...';
+
+  const steps = ['gStep1','gStep2','gStep3','gStep4','gStep5'];
+  const dot = document.getElementById('gSimDot');
+  const statusText = document.getElementById('gSimStatusText');
+  const statusBadge = document.getElementById('googleSimStatus');
+  const urlEl = document.getElementById('browserURL');
+  const page = document.getElementById('browserPage');
+
+  dot.classList.add('running');
+  statusText.textContent = 'Running simulation...';
+  steps.forEach(s => { document.getElementById(s).className = 'sim-step'; });
+
+  function activateStep(i) {
+    if (i < steps.length) document.getElementById(steps[i]).classList.add('active');
+    if (i > 0) document.getElementById(steps[i-1]).classList.add('done');
+  }
+
+  // Step 1: Launch
+  activateStep(0);
+  page.innerHTML = '<div style="color:#999;font-size:13px;padding:20px;">🚀 Launching Chromium...</div>';
+
+  setTimeout(() => {
+    // Step 2: Navigate
+    document.getElementById('gStep1').classList.add('done');
+    activateStep(1);
+    urlEl.textContent = 'google.com';
+    page.innerHTML = `
+      <div style="padding:28px;font-family:Arial,sans-serif;text-align:center;">
+        <div style="font-size:48px;font-weight:700;margin-bottom:20px;">
+          <span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">o</span><span style="color:#4285F4">g</span><span style="color:#34A853">l</span><span style="color:#EA4335">e</span>
+        </div>
+        <div style="border:1px solid #dfe1e5;border-radius:24px;padding:10px 20px;max-width:460px;margin:0 auto;display:flex;align-items:center;gap:10px;">
+          <span style="color:#9aa0a6;">🔍</span>
+          <span id="googleTyping" style="font-size:15px;color:#202124;"></span>
+          <span style="width:2px;height:18px;background:#4285F4;display:inline-block;animation:cursorBlink 1s step-end infinite;"></span>
+        </div>
+      </div>`;
+
+    setTimeout(() => {
+      // Step 3: Type
+      document.getElementById('gStep2').classList.add('done');
+      activateStep(2);
+      const typingEl = document.getElementById('googleTyping');
+      if (!typingEl) return;
+      const text = 'Playwright testing';
+      let j = 0;
+      const typeInterval = setInterval(() => {
+        if (j <= text.length) { typingEl.textContent = text.slice(0,j); j++; }
+        else clearInterval(typeInterval);
+      }, 80);
+
+      setTimeout(() => {
+        // Step 4: Press Enter
+        document.getElementById('gStep3').classList.add('done');
+        activateStep(3);
+        urlEl.textContent = 'google.com/search?q=Playwright+testing';
+
+        setTimeout(() => {
+          // Step 5: Results + Assert
+          document.getElementById('gStep4').classList.add('done');
+          activateStep(4);
+          page.innerHTML = `
+            <div style="padding:16px 24px;font-family:Arial,sans-serif;">
+              <div style="font-size:13px;color:#70757a;margin-bottom:12px;">About 12,400,000 results (0.43 seconds)</div>
+              <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #ebebeb;">
+                <div style="color:#1a0dab;font-size:18px;font-weight:400;margin-bottom:2px;">Playwright: Fast and reliable end-to-end testing for modern web apps</div>
+                <div style="color:#006621;font-size:13px;margin-bottom:4px;">playwright.dev</div>
+                <div style="font-size:14px;color:#545454;">Playwright enables reliable end-to-end testing for modern web apps. Cross-browser. Chromium, Firefox, WebKit.</div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <div style="color:#1a0dab;font-size:16px;margin-bottom:2px;">Getting started | Playwright</div>
+                <div style="color:#006621;font-size:13px;margin-bottom:3px;">playwright.dev › docs › intro</div>
+                <div style="font-size:13px;color:#545454;">Install Playwright and start writing your first test...</div>
+              </div>
+            </div>`;
+
+          document.getElementById('gStep5').classList.add('done');
+          statusBadge.className = 'assert-pass';
+          statusBadge.textContent = '✓ All Assertions Passed';
+          dot.classList.remove('running');
+          dot.classList.add('success');
+          statusText.textContent = 'Test PASSED (4.2s)';
+          document.getElementById('runLabel2').textContent = '✓ Simulation complete!';
+          googleRunning = false;
+        }, 800);
+      }, 1800);
+    }, 1000);
+  }, 800);
+}
+
+/* ─── INSTALL SIMULATION ─── */
+let installRunning = false;
+function runInstallSim() {
+  if (installRunning) return;
+  installRunning = true;
+  const lines = [
+    { html: '<span class="t-prompt">$</span> <span class="t-cmd">npm init playwright@latest</span>', delay: 400 },
+    { text: '', delay: 200 },
+    { html: '<span class="t-info">Getting started with writing end-to-end tests with Playwright:</span>', delay: 600 },
+    { html: '<span class="t-muted">Initializing project in \'.\' ...</span>', delay: 300 },
+    { text: '', delay: 100 },
+    { html: '  <span class="t-success">✔</span> <span class="t-muted">Do you want to use TypeScript or JavaScript?</span> <span class="t-success">TypeScript</span>', delay: 400 },
+    { html: '  <span class="t-success">✔</span> <span class="t-muted">Where to put your end-to-end tests?</span> <span class="t-success">tests</span>', delay: 300 },
+    { html: '  <span class="t-success">✔</span> <span class="t-muted">Add a GitHub Actions workflow?</span> <span class="t-success">false</span>', delay: 300 },
+    { html: '  <span class="t-success">✔</span> <span class="t-muted">Install Playwright browsers (y/N)</span> <span class="t-success">true</span>', delay: 500 },
+    { text: '', delay: 200 },
+    { html: '<span class="t-info">Installing @playwright/test...</span>', delay: 800 },
+    { html: '<span class="t-muted">npm warn deprecated...</span>', delay: 200 },
+    { html: '<span class="t-muted">added 3 packages in 8.2s</span>', delay: 400 },
+    { text: '', delay: 200 },
+    { html: '<span class="t-info">Downloading browsers...</span>', delay: 600 },
+    { html: '<span class="t-muted">  chromium 130.0.6723.69 (playwright build v1140) downloaded</span>', delay: 1200 },
+    { html: '<span class="t-muted">  firefox 131.0 (playwright build v1465) downloaded</span>', delay: 1000 },
+    { html: '<span class="t-muted">  webkit 18.0 (playwright build v2083) downloaded</span>', delay: 900 },
+    { text: '', delay: 300 },
+    { html: '<span class="t-success">✅ Playwright is installed! Run:</span>', delay: 100 },
+    { html: '<span class="t-prompt">  npx playwright test</span>', delay: 200 },
+  ];
+  typeLines('installTerminal', lines, 100, 'installDot', 'installStatus', () => {
+    installRunning = false;
+  });
+}
+
+/* ─── LOGIN SIMULATION ─── */
+let loginRunning = false;
+function runLoginSim() {
+  if (loginRunning) return;
+  loginRunning = true;
+  const container = document.getElementById('loginSimContainer');
+  container.style.display = 'block';
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('loginRunLabel').textContent = '⟳ Running login simulation...';
+  const assertContainer = document.getElementById('loginAsserts');
+  assertContainer.innerHTML = '';
+
+  const email = document.getElementById('loginEmailField');
+  const pass = document.getElementById('loginPassField');
+  const loginBtn = document.getElementById('loginBtn');
+  const urlEl = document.getElementById('loginURL');
+  email.textContent = ''; pass.textContent = '';
+  email.style.borderColor = '#dadce0';
+
+  // Focus email
+  setTimeout(() => {
+    email.style.borderColor = '#1a73e8';
+    const txt = 'user@example.com';
+    let j = 0;
+    const t = setInterval(() => {
+      if (j <= txt.length) { email.textContent = txt.slice(0,j); j++; }
+      else { clearInterval(t); }
+    }, 60);
+  }, 600);
+
+  // Fill password
+  setTimeout(() => {
+    email.style.borderColor = '#dadce0';
+    pass.style.borderColor = '#1a73e8';
+    pass.textContent = '••••••••••';
+  }, 1800);
+
+  // Click Sign In
+  setTimeout(() => {
+    pass.style.borderColor = '#dadce0';
+    loginBtn.style.background = '#1557b0';
+    loginBtn.textContent = 'Signing in...';
+  }, 2600);
+
+  // Navigate to dashboard
+  setTimeout(() => {
+    urlEl.textContent = 'app.example.com/dashboard';
+    const page = document.getElementById('loginPage');
+    page.innerHTML = `
+      <div style="text-align:center;padding:20px;">
+        <div style="font-size:40px;margin-bottom:12px;">✅</div>
+        <div style="font-size:20px;font-weight:700;color:#202124;">Welcome back!</div>
+        <div style="font-size:13px;color:#5f6368;margin-top:6px;">Dashboard loaded successfully</div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;margin-top:16px;font-size:13px;color:#166534;">
+          🎉 Login automation test passed!
+        </div>
+      </div>`;
+    // Show assertions
+    assertContainer.innerHTML = `
+      <span class="assert-badge assert-pass">✓ toHaveURL(/dashboard/)</span>
+      <span class="assert-badge assert-pass">✓ toBeVisible("Welcome back")</span>
+      <span class="assert-badge assert-pass">✓ Login flow complete</span>`;
+    document.getElementById('loginRunLabel').textContent = '✓ Login simulation complete!';
+    loginRunning = false;
+  }, 3600);
+}
+
+/* ─── TEST RUNNER ─── */
+let trRunning = false;
+function runTestRunner() {
+  if (trRunning) return;
+  trRunning = true;
+  const lines = [
+    { html: '<span class="t-prompt">$</span> <span class="t-cmd">npx playwright test</span>', delay: 400 },
+    { text: '', delay: 200 },
+    { html: '<span class="t-info">Running 6 tests using 3 workers</span>', delay: 700 },
+    { text: '', delay: 100 },
+    { html: '<span class="t-success">  ✓</span> <span class="t-muted">[chromium] › example.spec.ts › has title (1.2s)</span>', delay: 900 },
+    { html: '<span class="t-success">  ✓</span> <span class="t-muted">[chromium] › example.spec.ts › get started link (2.1s)</span>', delay: 700 },
+    { html: '<span class="t-success">  ✓</span> <span class="t-muted">[chromium] › login.spec.ts › Login with valid credentials (3.4s)</span>', delay: 1000 },
+    { html: '<span class="t-success">  ✓</span> <span class="t-muted">[firefox] › example.spec.ts › has title (1.8s)</span>', delay: 800 },
+    { html: '<span class="t-success">  ✓</span> <span class="t-muted">[firefox] › login.spec.ts › Login with valid credentials (3.9s)</span>', delay: 900 },
+    { html: '<span class="t-success">  ✓</span> <span class="t-muted">[webkit] › example.spec.ts › has title (2.3s)</span>', delay: 800 },
+    { text: '', delay: 300 },
+    { html: '<span style="background:#14532d;color:#4ade80;padding:2px 8px;border-radius:4px;font-weight:700;">  6 passed</span> <span class="t-muted">(12.7s)</span>', delay: 100 },
+    { text: '', delay: 200 },
+    { html: '<span class="t-muted">To open last HTML report run:</span>', delay: 100 },
+    { html: '<span class="t-prompt">  npx playwright show-report</span>', delay: 100 },
+  ];
+  typeLines('testRunnerBody', lines, 80, 'trDot', 'trStatus', () => {
+    trRunning = false;
+  });
+}
+
+/* ─── QUIZ LOGIC ─── */
+function checkQuiz(optEl) {
+  const opts = optEl.parentElement;
+  if (opts.querySelector('.correct') || opts.querySelector('.wrong')) return; // already answered
+  const correctIdx = parseInt(opts.getAttribute('data-correct'));
+  const allOpts = Array.from(opts.querySelectorAll('.quiz-opt'));
+  const clickedIdx = allOpts.indexOf(optEl);
+  const feedback = opts.parentElement.querySelector('.quiz-feedback');
+
+  allOpts.forEach(o => o.classList.add('disabled'));
+
+  if (clickedIdx === correctIdx) {
+    optEl.classList.add('correct');
+    feedback.className = 'quiz-feedback show correct-fb';
+    feedback.textContent = '✓ Correct! Great understanding.';
+  } else {
+    optEl.classList.add('wrong');
+    allOpts[correctIdx].classList.add('correct');
+    feedback.className = 'quiz-feedback show wrong-fb';
+    feedback.textContent = '✗ Not quite. The highlighted answer is correct.';
+  }
+}
+
+/* ─── Q&A ACCORDION ─── */
+function toggleQA(el) {
+  el.classList.toggle('open');
+}
+
+/* ─── SMOOTH SCROLL NAV ─── */
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>
