@@ -1,1 +1,1 @@
-# playwrightChapter1
+# playwright-chapter1
